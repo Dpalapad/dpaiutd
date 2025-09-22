@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dpaiutd</title>
+<style>
+:root{
+  --bg: #000;
+  --pink: #ff00ff;
+}
+html,body{
+  height:100%;
+  margin:0;
+  background: radial-gradient(circle at 20% 20%, #0a0013 0%, #000 70%);
+  overflow:hidden;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  perspective: 1000px; /* cho hiệu ứng 3D */
+  transform-style: preserve-3d;
+}
+
+/* chữ rơi */
+.falling {
+  position: absolute;
+  top: -10vh;
+  left: 0;
+  white-space: nowrap;
+  font-weight: 700;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+/* chữ lớn */
+.big {
+  font-size: 60px;
+  color: var(--pink);
+  text-shadow:
+    0 0 8px rgba(255,0,255,0.9),
+    0 0 20px rgba(255,0,255,0.6),
+    0 0 40px rgba(255,0,255,0.4);
+  z-index: 3;
+  animation: fall linear forwards;
+}
+
+/* chữ nhỏ */
+.small {
+  font-size: 18px;
+  color: var(--pink);
+  opacity: 0.15;
+  text-shadow:
+    0 0 4px rgba(255,0,255,0.4),
+    0 0 10px rgba(255,0,255,0.2);
+  z-index: 1;
+  animation: fall linear forwards;
+}
+
+/* hiệu ứng đổi màu trắng -> hồng */
+@keyframes colorFade {
+  0%   { color: white; text-shadow: 0 0 4px rgba(255,255,255,0.6); }
+  100% { color: var(--pink); text-shadow:
+          0 0 4px rgba(255,0,255,0.4),
+          0 0 10px rgba(255,0,255,0.2); }
+}
+
+.fadePink {
+  animation: fall linear forwards, colorFade linear forwards;
+  animation-duration: 10s, 6s;
+  animation-fill-mode: forwards;
+}
+
+/* hiệu ứng rơi */
+@keyframes fall {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity:1; }
+  50%  { transform: translateY(55vh) translateX(var(--drift)) scale(1.1) rotate(8deg); opacity:0.8; }
+  100% { transform: translateY(115vh) translateX(calc(var(--drift) * -0.4)) scale(0.95) rotate(-8deg); opacity:0; }
+}
+
+/* trái tim SVG */
+.heart {
+  position: absolute;
+  top: -5vh;
+  width: 56px;
+  height: 56px;
+  stroke-width: 2;
+  fill: none;
+  opacity: 1;
+  animation: fly linear forwards;
+}
+
+.heart.pink path { stroke: var(--pink); }
+.heart.white path { stroke: white; }
+
+@keyframes fly {
+  0%   { transform: translateY(0) scale(0.7); opacity:1; }
+  50%  { transform: translateY(50vh) scale(1.1); opacity:0.9; }
+  100% { transform: translateY(110vh) scale(1.5); opacity:0; }
+}
+
+/* hạt nền */
+canvas#stars{position:absolute; inset:0; z-index:0;}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<script>
+const phrases = [
+  "làm người yêu anh nha bbi",
+  "anh yêu em",
+  "dpa iu td",
+  "em là một kiệt tác",
+  "làm người yêu anh nha bbi",
+  "cảm ơn em đã đến bên anh",
+  "tình này dành hết cho em"
+];
+
+// tạo chữ
+function createPhrase(isBig=true) {
+  const p = document.createElement("div");
+  p.className = "falling " + (isBig ? "big" : "small");
+  p.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+
+  // chữ nhỏ: 50% biến màu trắng -> hồng
+  if(!isBig && Math.random() < 0.5) p.classList.add("fadePink");
+
+  // vị trí
+  const margin = 40;
+  let left;
+  if (Math.random() < 0.7) { 
+    left = margin + Math.random() * (window.innerWidth * 0.5 - margin);
+  } else {
+    left = window.innerWidth * 0.5 + Math.random() * (window.innerWidth * 0.5 - margin);
+  }
+  p.style.left = left + "px";
+
+  // thời gian animation
+  const dur = isBig ? 7 + Math.random()*4 : 10 + Math.random()*6;
+  p.style.animationDuration = dur + "s";
+
+  // độ drift
+  const drift = (Math.random() * 200) - 100;
+  p.style.setProperty('--drift', drift + "px");
+
+  // gán z-depth cho 3D
+  p.dataset.z = isBig ? 50 : -20;
+  p.style.transform = `translateZ(${p.dataset.z}px)`;
+
+  document.body.appendChild(p);
+  p.addEventListener("animationend", () => p.remove());
+}
+
+// tạo trái tim
+function createHeart() {
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.classList.add("heart", Math.random()<0.7 ? "pink" : "white");
+
+  const path = document.createElementNS(svgNS, "path");
+  path.setAttribute("d", "M12 21s-6.5-4.35-9.33-8.07C.54 9.74 2.24 5 6.3 5c2.04 0 3.67 1.21 4.7 2.62C12.03 6.21 13.66 5 15.7 5c4.06 0 5.76 4.74 3.63 7.93C18.5 16.65 12 21 12 21z");
+  path.setAttribute("stroke-linejoin","round");
+  svg.appendChild(path);
+
+  const left = Math.random() * window.innerWidth;
+  svg.style.left = left + "px";
+
+  const dur = 6 + Math.random()*6;
+  svg.style.animationDuration = dur + "s";
+
+  // z-depth 3D
+  svg.dataset.z = Math.random() * 60 - 30;
+  svg.style.transform = `translateZ(${svg.dataset.z}px)`;
+
+  document.body.appendChild(svg);
+  svg.addEventListener("animationend", ()=> svg.remove());
+}
+
+// hạt nền
+const c=document.getElementById("stars"),ctx=c.getContext("2d");
+function resize(){c.width=innerWidth;c.height=innerHeight;}
+resize(); addEventListener("resize",resize);
+let stars=[];
+for(let i=0;i<220;i++){
+  stars.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.8+0.5,vy:Math.random()*0.6+0.2});
+}
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle="white";
+  for(let s of stars){
+    ctx.globalAlpha=0.2+Math.random()*0.6;
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,2*Math.PI);ctx.fill();
+    s.y+=s.vy;if(s.y>c.height)s.y=0;
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+// tạo chữ và tim
+function start() {
+  setInterval(()=> {
+    for (let i=0;i<3;i++) createPhrase(false);
+    if (Math.random()<0.6) createPhrase(true);
+  }, 900);
+
+  setInterval(()=> createHeart(), 500);
+}
+start();
+
+// 3D tương tác với điện thoại
+window.addEventListener("deviceorientation", (event) => {
+    const gamma = event.gamma; // trái/phải
+    const beta = event.beta;   // trước/sau
+
+    const offsetX = gamma * 2;
+    const offsetY = beta * 2;
+
+    document.querySelectorAll(".falling, .heart").forEach(el => {
+        const z = parseFloat(el.dataset.z) || 0;
+        el.style.transform = `translateZ(${z}px) translateX(${offsetX}px) translateY(${offsetY}px)`;
+    });
+});
+
+// fallback desktop: chuột
+window.addEventListener("mousemove", e => {
+    const offsetX = (e.clientX - window.innerWidth/2)/50;
+    const offsetY = (e.clientY - window.innerHeight/2)/50;
+    document.querySelectorAll(".falling, .heart").forEach(el => {
+        const z = parseFloat(el.dataset.z) || 0;
+        el.style.transform = `translateZ(${z}px) translateX(${offsetX}px) translateY(${offsetY}px)`;
+    });
+});
+</script>
+</body>
+</html>
